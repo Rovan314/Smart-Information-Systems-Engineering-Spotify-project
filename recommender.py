@@ -134,7 +134,7 @@ class SpotifyRecommender:
             genre_matrix,
             numeric_matrix,
             categorical_matrix
-        ])
+        ]).tocsr()
 
         return self.feature_matrix
 
@@ -178,4 +178,4 @@ class SpotifyRecommender:
                 "dataset_source",
                 "similarity_score"
             ]
-        ]1
+        ]
