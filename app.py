@@ -88,7 +88,9 @@ if st.button("Recommend Similar Songs"):
     st.subheader("Recommended Songs")
 
     display_df = recommendations.copy()
-    display_df["similarity_score"] = display_df["similarity_score"].round(3)
+    display_df["similarity_score"] = display_df["similarity_score"].round(4)
+    display_df["jaccard_score"]    = display_df["jaccard_score"].round(4)
+    display_df["cosine_svd_score"] = display_df["cosine_svd_score"].round(4)
 
     st.dataframe(
         display_df,
