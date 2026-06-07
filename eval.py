@@ -24,7 +24,7 @@ def run_evaluation():
         "Oops!...I Did It Again - Britney Spears",
         "Womanizer - Britney Spears",
         "Circus - Britney Spears",
-        "Gimme More - Britney Spears"
+        "Gimme More - Britney Spears",
         "Espresso - Sabrina Carpenter", 
         "Love Me Harder - Ariana Grande", 
         "Training Season - Dua Lipa"

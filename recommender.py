@@ -241,37 +241,50 @@ class SpotifyRecommender:
     # ──────────────────────────────────────────────────────────────────────────
     # Helpers
     # ──────────────────────────────────────────────────────────────────────────
- 
+
     @staticmethod
     def _parse_genre_list(value):
-        """
-        Return a sorted list of genre strings from any input format:
-          "['pop', 'dance pop']"  →  ['dance pop', 'pop']
-          "country, hip hop"      →  ['country', 'hip hop']
-          "pop"                   →  ['pop']
-        """
+
         if pd.isna(value):
             return ["unknown"]
+
         value = str(value).strip()
+
+        if value == "" or value.lower() in ["nan", "none", "[]"]:
+            return ["unknown"]
+
         try:
             parsed = ast.literal_eval(value)
+
             if isinstance(parsed, list):
-                return sorted(set(g.strip().lower() for g in parsed if g.strip())) or ["unknown"]
+
+                genres = [
+                    str(g).strip().lower()
+                    for g in parsed
+                    if str(g).strip()
+                ]
+
+                return sorted(set(genres)) or ["unknown"]
+
         except Exception:
             pass
-        parts = [g.strip().lower() for g in value.replace(",", " ").split() if g.strip()]
-        return sorted(set(parts)) or ["unknown"]
- 
-    # Keep for backward compatibility with app.py
+
+        if "," in value:
+
+            genres = [
+                genre.strip().lower()
+                for genre in value.split(",")
+                if genre.strip()
+            ]
+
+        else:
+            genres = [value.lower()]
+
+        return sorted(set(genres)) or ["unknown"]
+
     @staticmethod
     def clean_genres(value):
-        if pd.isna(value):
-            return "unknown"
-        value = str(value).strip()
-        try:
-            parsed = ast.literal_eval(value)
-            if isinstance(parsed, list):
-                return " ".join(parsed)
-        except Exception:
-            pass
-        return value.replace(",", " ")
+
+        genres = SpotifyRecommender._parse_genre_list(value)
+
+        return ", ".join(genres)
