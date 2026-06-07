@@ -12,9 +12,7 @@ def run_evaluation():
     recommender.load_and_prepare_data()
     recommender.build_feature_matrix()
 
-    # =====================================================================
-    # 2. DEFINE YOUR TEST CASE (Use 'Track Name - Artist Name' format)
-    # =====================================================================
+    # 2. Define your test case (Use 'Track Name - Artist Name' format)
     test_song_label = "3 - Britney Spears" 
     
     # Define ~5 to 10 songs that are objectively similar to the test song.
@@ -27,7 +25,9 @@ def run_evaluation():
         "Gimme More - Britney Spears",
         "Espresso - Sabrina Carpenter", 
         "Love Me Harder - Ariana Grande", 
-        "Training Season - Dua Lipa"
+        "Training Season - Dua Lipa",
+        "Don’t Smile - Sabrina Carpenter",
+        "Tears - Sabrina Carpenter"
     ]
 
     print(f"Testing recommendations for track: {test_song_label}")
@@ -36,12 +36,69 @@ def run_evaluation():
     recs = recommender.recommend(selected_label=test_song_label, top_n=20)
     
     if recs.empty:
-        print(f"Error: Could not find '{test_song_label}' in the dataset. Check spelling!")
+        print(f"Error: Could not find '{test_song_label}'. Check spelling!")
         return
 
-    # Reconstruct the song_labels for the recommended tracks to compare them
+    # Reconstruct the labels for the recommended tracks
     recs["song_label"] = recs["track_name"].astype(str) + " - " + recs["artist_name"].astype(str)
     recommended_labels = recs["song_label"].tolist()
+
+
+    # True Positives: Songs it recommended that ARE on our list
+    true_positives_list = [song for song in recommended_labels if song in ground_truth_positives]
+    
+    # False Positives: Songs it recommended that are NOT on our list
+    false_positives_list = [song for song in recommended_labels if song not in ground_truth_positives]
+    
+    # False Negatives: Songs on our list that the model MISSED
+    false_negatives_list = [song for song in ground_truth_positives if song not in recommended_labels]
+
+
+    # 4. Calculate Scores
+    all_labels = recommender.df["song_label"].tolist()
+    y_true = []
+    y_pred = []
+    
+    for label in all_labels:
+        # Skip the seed song itself so it doesn't skew the grade
+        if label == test_song_label: continue
+        
+        # Ground Truth: 1 if it's in our known relevant list, else 0
+        y_true.append(1 if label in ground_truth_positives else 0)
+        
+        # Prediction: 1 if our model recommended it in the Top K, else 0
+        y_pred.append(1 if label in recommended_labels else 0)
+
+    # 5. Print the metrics to the terminal
+    conf_matrix = confusion_matrix(y_true, y_pred)
+    # Try to unpack into TN, FP, FN, TP for easier reporting (binary classification)
+    tn = fp = fn = tp = None
+    if getattr(conf_matrix, "shape", None) == (2, 2):
+        tn, fp, fn, tp = conf_matrix.ravel()
+    f1 = f1_score(y_true, y_pred, zero_division=0)
+    
+    print("\n=== EVALUATION RESULTS ===")
+    print(f"F1-Score: {f1:.4f}")
+    print("\nConfusion Matrix:")
+    print(conf_matrix)
+    if tn is not None:
+        print(f"TN: {tn}  FP: {fp}  FN: {fn}  TP: {tp}")
+    
+    print(f"\n✅ TRUE POSITIVES ({len(true_positives_list)})")
+    print("   We wanted these, and the model successfully found them:")
+    for song in true_positives_list:
+        print(f"    + {song}")
+
+    print(f"\n❌FALSE POSITIVES ({len(false_positives_list)})")
+    print("   The model recommended these, but they weren't on our target list:")
+    for song in false_positives_list:
+        print(f"    - {song}")
+
+    print(f"\n👻 FALSE NEGATIVES ({len(false_negatives_list)})")
+    print("   We explicitly asked for these, but the model missed them:")
+    for song in false_negatives_list:
+        print(f"    - {song}")
+    print("\n")
 
     print("\n--- ACTUAL TOP 20 RECOMMENDATIONS ---")
     for i, song in enumerate(recommended_labels):
@@ -70,35 +127,6 @@ def run_evaluation():
         print(f"   Final Score: {row['similarity_score']:.4f}")
         print(f"   ┣━ Cosine (SVD) Match:  {row['cosine_svd_score']:.4f}")
         print(f"   ┗━ Jaccard (Genre) Match: {row['jaccard_score']:.4f}\n")
-
-    # 4. Calculate Scores
-    all_labels = recommender.df["song_label"].tolist()
-    y_true = []
-    y_pred = []
-    
-    for label in all_labels:
-        # Skip the seed song itself so it doesn't skew the grade
-        if label == test_song_label: continue
-        
-        # Ground Truth: 1 if it's in our known relevant list, else 0
-        y_true.append(1 if label in ground_truth_positives else 0)
-        
-        # Prediction: 1 if our model recommended it in the Top K, else 0
-        y_pred.append(1 if label in recommended_labels else 0)
-
-    # 5. Print the Lab 7 metrics to the terminal
-    conf_matrix = confusion_matrix(y_true, y_pred)
-    f1 = f1_score(y_true, y_pred, zero_division=0)
-    
-    print("\n=== EVALUATION RESULTS ===")
-    print(f"F1-Score: {f1:.4f}")
-    print("\nConfusion Matrix:")
-    print(f"True Positives  (Relevant & Recommended): {conf_matrix[1][1]}")
-    print(f"False Positives (Irrelevant but Recommended): {conf_matrix[0][1]}")
-    print(f"False Negatives (Relevant but Missed): {conf_matrix[1][0]}")
-    print(f"True Negatives  (Irrelevant & Ignored): {conf_matrix[0][0]}")
-    
-    
     print("\nClassification Report:")
     print(classification_report(y_true, y_pred, zero_division=0))
 

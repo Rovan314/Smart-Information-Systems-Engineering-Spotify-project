@@ -3,8 +3,14 @@ Ridwan and Aleksandar's Spotify repository
 
 For getting things to work
 
+activate the environment on the Terminal(PowerShell) with
+./env/scripts/activate
+
 pip install -r requirements.txt
 streamlit run app.py
+
+and for evaluations or eval.py
+run it on a seperate terminal
 
 Basic Setup:
 
