@@ -1,6 +1,33 @@
+import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix, classification_report, f1_score
 from recommender import SpotifyRecommender
+
+
+def calculate_ranking_metrics(recommended_list, ground_truth_list, k=20):
+    """
+    Calculates Precision@K, Recall@K, and NDCG@K.
+    """
+    top_k_recs = recommended_list[:k]
+    hits = [1 if item in ground_truth_list else 0 for item in top_k_recs]
+    num_hits = sum(hits)
+
+    precision_at_k = num_hits / k
+    recall_at_k = num_hits / len(ground_truth_list) if len(ground_truth_list) > 0 else 0.0
+
+    dcg = 0.0
+    for i, rel in enumerate(hits):
+        dcg += rel / np.log2(i + 2)
+
+    ideal_hits = [1] * min(len(ground_truth_list), k)
+    idcg = 0.0
+    for i, rel in enumerate(ideal_hits):
+        idcg += rel / np.log2(i + 2)
+
+    ndcg_at_k = dcg / idcg if idcg > 0 else 0.0
+
+    return precision_at_k, recall_at_k, ndcg_at_k
+
 
 def run_evaluation():
     print("Loading data and building feature matrix...")
@@ -43,6 +70,20 @@ def run_evaluation():
     recs["song_label"] = recs["track_name"].astype(str) + " - " + recs["artist_name"].astype(str)
     recommended_labels = recs["song_label"].tolist()
 
+    K = 20
+    p_at_k, r_at_k, ndcg_at_k = calculate_ranking_metrics(
+        recommended_list=recommended_labels,
+        ground_truth_list=ground_truth_positives,
+        k=K,
+    )
+
+    print("\n" + "=" * 50)
+    print(f" RANK-AWARE METRICS (@K={K})")
+    print("=" * 50)
+    print(f"Precision@{K}: {p_at_k:.4f}")
+    print(f"Recall@{K}:    {r_at_k:.4f}")
+    print(f"NDCG@{K}:      {ndcg_at_k:.4f}")
+    print("=" * 50)
 
     # True Positives: Songs it recommended that ARE on our list
     true_positives_list = [song for song in recommended_labels if song in ground_truth_positives]
