@@ -27,6 +27,32 @@ def calculate_ranking_metrics(recommended_list, ground_truth_list, k=20):
     ndcg_at_k = dcg / idcg if idcg > 0 else 0.0
 
     return precision_at_k, recall_at_k, ndcg_at_k
+    #despite classification report already giving us precision, recall, and f1, 
+    # we also want to calculate these rank-aware metrics to see how well 
+    # the model is doing in terms of ordering the recommendations, not 
+    # just binary relevance.
+
+
+def svd_component_analysis(recommender):
+    """
+    Plots cumulative explained variance vs number of SVD components.
+
+    The elbow point shows the minimum number of components that capture
+    most of the variance — used to justify the SVD_COMPONENTS choice.
+    """
+    print("\n" + "=" * 50)
+    print(" SVD COMPONENT ANALYSIS")
+    print("=" * 50)
+
+    evr = recommender.svd.explained_variance_ratio_
+    cumulative = np.cumsum(evr)
+    n_total = len(evr)
+
+    for threshold in [0.50, 0.75, 0.90, 0.95]:
+        n_needed = int(np.searchsorted(cumulative, threshold)) + 1
+        print(f"  Components to explain {threshold:.0%} variance: {n_needed}")
+
+    print(f"\n  Current setting ({n_total} components) explains: {cumulative[-1]:.1%}")
 
 
 def run_evaluation():
@@ -38,6 +64,7 @@ def run_evaluation():
     )
     recommender.load_and_prepare_data()
     recommender.build_feature_matrix()
+    svd_component_analysis(recommender)
 
     # 2. Define your test case (Use 'Track Name - Artist Name' format)
     test_song_label = "3 - Britney Spears" 

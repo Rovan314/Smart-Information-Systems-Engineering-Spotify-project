@@ -32,9 +32,9 @@ class SpotifyRecommender:
         score = JACCARD_WEIGHT * jaccard + COSINE_WEIGHT * cosine_svd
     """
  
-    JACCARD_WEIGHT = 0.2
-    COSINE_WEIGHT  = 0.8
-    SVD_COMPONENTS = 150
+    JACCARD_WEIGHT = 0.4
+    COSINE_WEIGHT  = 0.6
+    SVD_COMPONENTS = 110
  
     def __init__(self, modern_path, classic_path):
         self.modern_path   = modern_path
@@ -149,7 +149,7 @@ class SpotifyRecommender:
         # ── 3. One-hot categorical features ───────────────────────────────────
         cat_encoder = OneHotEncoder(handle_unknown="ignore", sparse_output=True)
         cat_sparse  = cat_encoder.fit_transform(
-            self.df[["album_type", "dataset_source"]]
+            self.df[["album_type"]] #removed "dataset_source" to reduce dimensionality and potential data leakage
         )
  
         # ── 4. Stack all feature blocks ───────────────────────────────────────
